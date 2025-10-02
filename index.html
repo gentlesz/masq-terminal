@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MASQ Terminal</title>
+  <link rel="icon" type="image/png" href="/assets/logomasq1-g11o.gif" />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Roboto:wght@400;700&family=Cinzel:wght@400;700&display=swap" rel="stylesheet" />
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Roboto', sans-serif;
+      background: black;
+      overflow: hidden;
+    }
+
+    .video-bg {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      object-fit: cover;
+      opacity: 0.3;
+    }
+
+    .header {
+      background: url('/assets/banner_skelF22.gif') no-repeat center center;
+      background-size: cover; /* make sure it covers the whole header */
+      height: 7vh;
+      width: 100%;
+      position: fixed;
+      top: 0;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      box-shadow: 0 0 10px #FF0000;
+    }
+
+    .logo {
+      width: 60px;
+      height: auto;
+      margin-left: 10px;
+    }
+
+    .title-container {
+      flex-grow: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .title {
+      color: #FF0000;
+      font-size: 36px;
+      font-family: 'Orbitron', sans-serif;
+      text-shadow: 0 0 10px #FF0000;
+      margin: 0;
+      border: 10px solid transparent;
+      border-image: url('/assets/button2.png') 300 round;
+    }
+
+    .subtitle {
+      font-size: 12px;
+      color: #FFD700;
+      font-family: 'Roboto', sans-serif;
+      margin-left: 10px;
+    }
+    
+    .terminal-container {
+      margin-top: 10vh;
+      max-width: 800px;
+      height: 75vh;
+      background: rgba(0, 0, 0, 0.7);
+      border: 20px solid transparent;
+      border-image: url('/assets/button2.png') 300 round;
+      border-radius: 16px;
+      box-shadow: 0 0 20px #FFD700, inset 0 0 10px rgba(255, 0, 0, 0.3);
+      margin-left: auto;
+      margin-right: auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      backdrop-filter: blur(5px);
+    }
+
+    .chat-log {
+      flex: 1;
+      overflow-y: auto;
+      color: #FFD700;
+      font-family: monospace;
+      font-size: 14px;
+      padding: 10px;
+      line-height: 1.5;
+      text-shadow: 0 0 4px #FF0000;
+      border-bottom: 1px solid rgba(255, 0, 0, 0.2);
+    }
+
+    .chat-input {
+      display: flex;
+      margin-top: 12px;
+    }
+
+    .chat-input input {
+      flex: 1;
+      background: black;
+      color: #FFD700;
+      border: 1px solid #FF0000;
+      border-radius: 6px;
+      padding: 8px;
+      font-family: monospace;
+      font-size: 14px;
+      outline: none;
+      text-shadow: 0 0 3px #FF4500;
+    }
+
+    .chat-input button {
+      margin-left: 10px;
+      background: #FF0000;
+      color: #FFD700;
+      border: none;
+      border-radius: 6px;
+      padding: 8px 16px;
+      font-weight: bold;
+      box-shadow: 0 0 10px #FF0000;
+      cursor: pointer;
+    }
+
+    .chat-input button:hover {
+      background: #FFD700;
+      color: #000;
+      box-shadow: 0 0 15px #FFD700;
+    }
+
+    #streaming-timer {
+      position: fixed;
+      top: 100px;
+      right: 20px;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 8px 16px;
+      border-radius: 12px;
+      border: 2px solid #FFD700;
+      box-shadow: 0 0 10px #FF0000;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 14px;
+      color: #FFD700;
+      z-index: 1100;
+      text-align: center;
+      text-shadow: 0 0 4px #FF4500;
+    }
+
+    #streaming-timer .label {
+      display: block;
+      font-size: 11px;
+      letter-spacing: 1px;
+      margin-bottom: 4px;
+      color: #FF4500;
+      text-shadow: 0 0 4px #FFD700;
+    }
+  </style>
+</head>
+<body>
+
+  <video class="video-bg" autoplay muted loop playsinline>
+    <source src="/assets/MASQ1.webm" type="video/webm" />
+  </video>
+
+  <div class="header">
+    <a href="/">
+      <img src="/assets/logomasq1-g11o.gif" alt="Logo" class="logo" />
+    </a>
+    <div class="title-container">
+      <div class="title glow">the MASQuerades</div>
+      <div class="subtitle">$MASQ</div>
+    </div>
+  </div>
+
+  <div id="streaming-timer">
+    <span class="label">Streaming since</span>
+    <span id="timer">01:00:00</span>
+  </div>
+
+  <main>
+    <div class="terminal-container">
+      <div class="chat-log" id="chatLog"></div>
+      <div class="chat-input">
+        <input type="text" id="chatInput" placeholder="Type your message here..." />
+        <button onclick="sendMessage()">Send</button>
+      </div>
+    </div>
+  </main>
+
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+
+    const supabase = createClient(
+      'https://pklmlttcycefshwxqcwu.supabase.co',
+'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBrbG1sdHRjeWNlZnNod3hxY3d1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMxMDE0OTQsImV4cCI6MjA1ODY3NzQ5NH0.1NxMlj8YvWHpntGXRlXjB4ntxW5aO-uJH8USLvlGm4Y'
+    );
+
+    const chatLog = document.getElementById("chatLog");
+
+    async function loadMessages() {
+      const { data, error } = await supabase
+        .from('masq_terminal')
+        .select('*')
+        .order('created_at', { ascending: true });
+
+      if (error) {
+        console.error("Error loading messages:", error);
+        return;
+      }
+
+      console.log("Loaded messages:", data);
+
+      if (data) {
+        data.forEach(msg => {
+          if (msg.message) appendMessage(msg.message);
+        });
+      }
+    }
+
+
+    function appendMessage(msg) {
+      const line = document.createElement("p");
+      line.textContent = `> ${msg}`;
+      chatLog.appendChild(line);
+      chatLog.scrollTop = chatLog.scrollHeight;
+    }
+
+    window.sendMessage = async function () {
+      const input = document.getElementById("chatInput");
+      const text = input.value.trim();
+      if (!text) return;
+
+      const { error } = await supabase
+        .from('masq_terminal')
+        .insert([{ message: text }]);
+
+      input.value = "";
+    }
+
+    const channel = supabase
+    .channel('chat-room')
+    .on(
+      'postgres_changes',
+      { event: 'INSERT', schema: 'public', table: 'masq_terminal' },
+      (payload) => {
+        appendMessage(payload.new.message);
+      }
+    )
+    .subscribe();
+
+    loadMessages();
+
+    document.getElementById("chatInput").addEventListener("keydown", function (e) {
+      if (e.key === "Enter") sendMessage();
+    });
+
+    window.addEventListener("DOMContentLoaded", () => {
+      const timerDisplay = document.getElementById("timer");
+      let secondsElapsed = 3600;
+
+      function updateTimer() {
+        secondsElapsed++;
+        const hrs = String(Math.floor(secondsElapsed / 3600)).padStart(2, '0');
+        const mins = String(Math.floor((secondsElapsed % 3600) / 60)).padStart(2, '0');
+        const secs = String(secondsElapsed % 60).padStart(2, '0');
+        timerDisplay.textContent = `${hrs}:${mins}:${secs}`;
+      }
+
+      setInterval(updateTimer, 1000);
+    });
+  </script>
+</body>
+</html>
